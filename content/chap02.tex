@@ -255,10 +255,8 @@ c = \sum\limits_{j = 1}^m {{e_j}{p_{i \times k + j}}}
 \end{algorithm}
 
 \section{TCP/NC协议}
+在详细阐述TCP/NC协议原理之前，先引入\emph{ACK on degree of freedom}这个概念。
 \par
-网络编码自出现以来就作为一种重要的改善网络性能，尤其是无线网络性能的工具。它的主要优势在于能够跨时间、跨流地将数据混合起来。这可以让在lossy信道中的数据传输更为健壮和高效。尽管如此，我们还是很少看见应用网络编码的实际例子，一个主要原因就是如何将网络编码很自然地加入到现有的网络体系中，而不与其冲突。
-\par
-Sundararajan等人在“Network Coding Meets TCP”\textsuperscript{\cite{Sundararajan2009}}一文中提出编码TCP协议（ TCP/NC），用于提高标准TCP协议在无线网络环境下的性能。其通过在TCP层和IP层之间添加一个网络编码层来掩盖lossy信道中出现的随机丢包。与以往一些学者在改进TCP在无线网络下性能的工作不同的是，TCP/NC不需要对原有的OSI协议栈做出修改。TCP/NC可以很优雅地与标准TCP协议，IP协议，链路层的协议一起工作，不会与原有协议的机制冲突，适合大规模地部署在现有互联网体系中。在详细介绍TCP/NC协议之前，先引入\emph{ACK on degree of freedom}这个概念。
 \subsection{ACK on degree of freedom}\label{ackondegree}
 现有的很多可靠传输协议都有ACK这个机制，如TCP，ARQ等。接收方通过回复发送方ACK来让发送方了解自己收到了哪些数据。如果在没有应用编码的网络中，那么接收端在收到原始报文后就可以回给发送方ACK；如果在应用了网络编码的网络中，如文献\cite{Lun2008On}，接收端需要在收到若干个数据包后，对整体进行解码恢复原始数据包，才会回复ACK，亦如第二章介绍的Batch Coding，其缺点是传送数据包的时延较长。针对Batch Coding的缺点，文献\cite{chen2010pipeline}提出了流水线编码（ Pipeline  Coding ），但是在丢包网络中也会存在ACK延迟的问题。图\ref{LIUSHUIXIAN_EPS}中的$DATA7$和$DATA8$需要等到收到$C10$后才可以解出，进而回给发送端ACK。ACK的延迟不仅会影响吞吐率，还会影响发送端的编码队列的长度。直觉来说，编码端只有在收到某个数据包的ACK后，才会将其从编码缓存中删除。例如，源节点有$n$个数据包（ 每个数据包看做是有限域$\mathbb{F}$上的向量 ），分别是$p_{1}$，$p_{2}$，$\dots$，$p_{n}$。经过编码，依次发出去$n$个编码包，分别是$p_{1}$，$\left(p_{1}+p_{2}\right)$，$\left(p_{2}+p_{3}\right)$，$\dots$，$\left(p_{n-1}+p_{n}\right)$。由于网路质量差，第一个包$p_{1}$丢了，接收端只收到$\left(p_{1}+p_{2}\right)$，$\left(p_{2}+p_{3}\right)$，$\dots$，$\left(p_{n-1}+p_{n}\right)$。接收端尽管收到了$n-1$个编码包，但一个也无法解出来，也就无法给源节点确认ACK。可靠传输要求发送端在没收到接收端确认ACK时必须把$p_{1}$，$p_{2}$，$\dots$，$p_{n}$都放入缓存队列。我们可以看到这个队列此时的长度长达$n$。
 \par
@@ -303,13 +301,15 @@ Sundararajan等人在“Network Coding Meets TCP”\textsuperscript{\cite{Sundar
 \end{table}  
 \par
 总结一下，\emph{ACK on degree of freedom}就是说我不再对原始数据包进行ACK确认，而是确认\emph{自由度}。只要接收端看到了某个报文（ see a packet )，即使没有解出来，依然可以恢复发送端对seen packet的确认。
-\subsection{TCP/NC架构分析}
-文献\cite{4298308}在对网络编码与现有协议结合中可能出现的问题作出过分析，具体到TCP来说，就是寻找一种能够与现有的TCP的滑动窗口兼容的编码机制。本文第\ref{pipelinesec}小节介绍的Pipeline Coding就与TCP的滑动窗口很相似。与文献\cite{chou2003practical,chachulski2007trading}中用到的Batch Coding不同，Pipeline Coding的编码过程是渐进性的。每下来一个原始报文，就产生一个或者多个编码包。
+\subsection{TCP/NC原理}
 \par
-TCP可靠传输的背后思想是使用Acknowledgements对按序到来的数据包进行确认，同时发送端使用ACK来进行拥塞控制。对于使用网络编码来说，这个机制需要做点改变。其原因在于使用网络编码后，接收端收到的不再是原始数据包，而是原始数据包的线性组合（ 这里仅针对线性网络编码 ）。一旦收到足够多的线性组合，就可以解码得到原始数据包。标准TCP中“\emph{按序到达的报文}”这个概念缺失了。现有的ACK机制不允许我们确认还未解码的数据包。本文第\ref{ackondegree}小节所讲到的\emph{ACK on degree of freedom}概念值得借鉴。绝大多数情况，接收端收到的线性组合报文都会给接收端带来新信息（ 在有限域$\mathbb{F}$下有可能出现非线性独立的编码包 ）,也就是自由度（ 将编码数据包看做是向量 ）。TCP/NC对于收到的编码包产生的自由度回复ACK，而不管这个新来的包是否让接收端解出了一个包。
+网络编码自出现以来就作为一种重要的改善网络性能，尤其是无线网络性能的工具。它的主要优势在于能够跨时间、跨流地将数据混合起来。这可以让在lossy信道中的数据传输更为健壮和高效。尽管如此，我们还是很少看见应用网络编码的实际例子，一个主要原因就是如何将网络编码很自然地加入到现有的网络体系中，而不与其冲突。文献\cite{4298308}在对网络编码与现有协议结合中可能出现的问题作出过分析，具体到TCP来说，就是寻找一种能够与现有的TCP的滑动窗口兼容的编码机制。
 \par
-TCP/NC在传输层和网络层引入了一个Network Coding Layer（ NC层 ），如图\ref{TCPNC_EPS}，并再次利用了标准TCP的拥塞控制机制，也就是正在传输的报文字节数和ACK序号之间的差值不能超过拥塞窗口的值。TCP/NC在原有协议栈的机制上作出了两点改变：首先，无论何时发送端被允许发送数据包的时候，它发送的是拥塞窗口的报文的线性组合；第二，接收端对于其收到的每个自由度回复ACK，而不是对原始报文回复ACK。
+Sundararajan等人在“Network Coding Meets TCP”\textsuperscript{\cite{Sundararajan2009}}一文中提出编码TCP协议（ TCP/NC），用于提高标准TCP协议在无线网络环境下的性能。其通过在TCP层和IP层之间添加一个网络编码层来掩盖lossy信道中出现的随机丢包。与以往一些学者在改进TCP在无线网络下性能的工作不同的是，TCP/NC不需要对原有的OSI协议栈做出修改。TCP/NC可以很优雅地与标准TCP协议，IP协议，链路层的协议一起工作，不会与原有协议的机制冲突，适合大规模地部署在现有互联网体系中。
 \par
+TCP可靠传输的背后思想是使用Acknowledgements对按序到来的数据包进行确认，同时发送端使用ACK来进行拥塞控制。对于使用网络编码来说，这个机制需要做点改变。其原因在于使用网络编码后，接收端收到的不再是原始数据包，而是原始数据包的线性组合（ 这里仅针对线性网络编码 ）。一旦收到足够多的线性组合，就可以解码得到原始数据包。标准TCP中“\emph{按序到达的报文}”这个概念缺失了。现有的ACK机制不允许我们确认还未解码的数据包。上一小节所讲到的\emph{ACK on degree of freedom}概念值得借鉴。绝大多数情况，接收端收到的线性组合报文都会给接收端带来新信息（ 在有限域$\mathbb{F}$下有可能出现非线性独立的编码包 ）,也就是自由度（ 将编码数据包看做是向量 ）。TCP/NC对于收到的编码包产生的自由度回复ACK，表示自己看到了某个包$p$\footnote{seen packet的概念见\ref{ackondegree}小节的定义\ref{df26}}，而不管这个新来的包是否让接收端解出了一个包。
+\par
+图\ref{TCPNC_EPS}为TCP/NC的系统框架。在TCP层和IP层之间引入了一个NC编码层。NC层缓存从TCP层下来的数据包，并放入编码缓存，然后生成处于编码缓存中所有数据包的线性组合并发出去。当发送端的NC层收到接收端的ACK后，才会将对应的数据包从编码缓存中删除，并将相应ACK传给上层TCP。编码包在到达接收端的NC层之后会被放入解码缓存，并进行高斯消元等解码操作。如若有新的包被看到，则回复发送端相应的ACK；如若有数据包被解出，将其交给上层TCP。
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=3in]{figures/tcpnc.eps}
@@ -317,13 +317,12 @@ TCP/NC在传输层和网络层引入了一个Network Coding Layer（ NC层 ）�
 	\label{TCPNC_EPS}
 \end{figure}
 \par
-在发送端，NC层缓存从TCP层下来的报文
-\textbf{使用~\LaTeX{}~进行科学排版的另一大优势就是可以灵活地在文章中插入矢量绘图}，虽然在Word软件也支持插入同为Microsoft Office套件的Visio编辑的矢量图，然而Word其对其余主流矢量图格式(如.pdf, .eps等文件)的支持并不理想。图\ref{SWJTU_LOGO_PNG}和图\ref{SWJTU_LOGO_PDF}分别示出了位图格式和矢量格式的西南交通大学校徽\footnote{请注意，文中所使用的西南交通大学校徽文件中，位图版为采西南交通大学官方提供的校徽LOGO文件，矢量版校徽为模板作者通过软件自行勾勒得出，非官方的正式版，请不要在正式场合使用。}，可以看出在放大比率为200\%的时候，位图校徽的边缘开始出现模糊的情形。与此同时，\textbf{由于矢量图是一种基于纯数学公式语言的绘图，采用矢量图制作的插图能够保证成像不会因为放大而失真同时保证很小的文件大小}。
-
-\par
-需要注意的是，并非所有的插图都适合采用矢量格式，尤其是照片之类的图片，通常情况下适宜采用.png或者.jpeg等位图格式；\textbf{而系统框图、曲线图、概念流程图等，则以采用矢量图格式为佳。}
-
-\par
-目前，主流的商业矢量插画绘制软件以ADOBE公司的Illustrator以及Corel公司的CorelDRAW为主，不过受制于其售价，一般学生用户可以使用一些免费的矢量图编辑软件，例如Inkscape\footnote{Inkscape官方网站：\url{https://inkscape.org/en/}}，作为一款矢量图绘制的利器，其功能已经能够基本满足正常的需，深受广大用户的喜爱。
+TCP/NC能够抵抗链路丢包的关键就是发送端进行冗余编码。通过“seen”这个概念，将链路丢包这个问题往后推。如果后期的冗余包能够补偿丢失的报文，那么TCP层就不会发现丢包。如图\ref{CODINGACK_EPS}所示，虽然$SEQ=2$和$SEQ=3$这两个报文丢失，但发送端依然可以收到对$p_{2}$和$p_{3}$的ACK。只要后期传输过程中的冗余包足够补偿掉$SEQ=2$和$SEQ=3$的丢失，那么上层TCP就根本发现不了丢包。可以看见，TCP/NC可以一定程度掩盖链路的丢包。
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=4in]{figures/codingack.pdf}
+	\caption{编码和ACK示例}
+	\label{CODINGACK_EPS}
+\end{figure}
 \section{本章小结}
-
+本章首先介绍了网络编码的相关理论，对其图论模型做了描述，并在此基础上阐述了线性网络编码的相关知识。然后介绍了目前在网络编码领域应用最为广泛的Batch Coding编码机制，分析了其优缺点，引出了流水线编码机制，给出了编解码算法。最后介绍了TCP/NC协议的原理架构，重点提及了其引入的几个新概念，如“seen packet”，分析其是如何抵抗网络丢包的。本章主要是为后面的TCP/NC协议的实现和改进打下基础。 
