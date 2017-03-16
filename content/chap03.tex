@@ -1,0 +1,52 @@
+%---------------------------------------------------------------------------------
+%                西南交通大学研究生学位论文：第三章内容
+%---------------------------------------------------------------------------------
+\chapter{TCP/NC协议实现}
+本章主要讲TCP/NC的具体实现，在无线lossy信道下测试TCP/NC的性能，并与标准的TCP-vegas进行分析对比。
+\section{数据包编码}
+由于从TCP层下来的数据包都是字节流，如何从这些字节流中提取出我们在第\ref{xianxingbianma}小节中谈到的报文概念呢？进一步地，我们如何对这些报文进行各种操作，如加减乘除呢？
+\par
+将数据包分解成字节，先对字节进行加减乘除的操作，拼接得到的结果是可行的。这解决了以何种角度刻画数据包的问题。对于数据包的运算，如果是在实数域上进行各种代数运算，则会涉及到进位的问题，不好处理。例如，$p_{1}$和$p_{2}$这两个数据包的二进制形式为$p_{1}=\left(1010\ 1010\right)$和$p_{2}=\left(1111\ 0000\right)$。在实数域上计算得到$p_{3}=p_{1}+p_{2}$，则$p_{3}=\left(1\ 1001\ 1010\right)$，$p_{1}$和$p_{2}$都是8个比特，但是$p_{3}$却是$9$比特，出现了进位，导致我们的处理很麻烦。
+\par
+第二章中提到的有限域是解决数据包运算问题的关键。有限域是一种代数结构，也存在着和实数域中一样的加减乘除等运算，并且各个元素进行加减乘除得到的结果也在有限域中。
+
+\begin{table}[htbp]
+	\centering
+	\caption{相关术语}
+	\begin{tabularx}{250pt}{c|c|c}
+		\toprule
+		\textbf{各次幂$\alpha_{k}$} & \textbf{$\alpha$的多项式}&\textbf{多项式系数$m$重}\\
+		\midrule
+		$\alpha^{0}$ & 1 &$\left(0001\right)$\\
+		\hline
+		$\alpha^{1}$ & $\alpha$ &$\left(0010\right)$\\
+		\hline
+		$\alpha^{2}$ & $\alpha^{2}$ & $\left(0100\right)$\\
+		\hline
+		$\alpha^{3}$ & $\alpha^{3}$ & $\left(1000\right)$\\
+		\hline
+		$\alpha^{4}$ & $\alpha+1$ & $\left(0011\right)$\\
+		\hline
+		$\alpha^{5}$ & $\alpha^{2}+\alpha$ & $\left(0110\right)$\\
+		\hline
+		$\alpha^{6}$ & $\alpha^{3}+\alpha^{2}$ & $\left(1100\right)$\\
+		\hline
+		$\alpha^{7}$ & $\alpha^{3}+\alpha+1$ & $\left(1011\right)$\\
+		\hline
+		$\alpha^{8}$ & $\alpha^{2}+1$ & $\left(0101\right)$\\
+		\hline
+		$\alpha^{9}$ & $\alpha^{3}+\alpha$ & $\left(1010\right)$\\
+		\hline
+		$\alpha^{10}$ & $\alpha^{2}+\alpha+1$ & $\left(0111\right)$\\
+		\hline
+		$\alpha^{11}$ & $\alpha^{3}+\alpha^{2}+\alpha$ & $\left(1110\right)$\\
+		\hline
+		$\alpha^{12}$ & $\alpha^{3}+\alpha^{2}+\alpha+1$ & $\left(1111\right)$\\
+		\hline
+		$\alpha^{13}$ & $\alpha^{3}+\alpha^{2}+1$ & $\left(1101\right)$\\
+		\hline
+		$\alpha^{14}$ & $\alpha^{3}+1$ & $\left(1001\right)$\\
+		\hline
+	\end{tabularx}
+	\label{SHUYU}
+\end{table}
