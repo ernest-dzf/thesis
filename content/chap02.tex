@@ -15,7 +15,7 @@
 	\label{BUTTER_EPS}
 \end{figure}
 \par
-图\ref{BUTTER_EPS}为一个包交换模型。在该网络中，源节点$s$需要将信息多播给两个目的的节点$t$和$u$。有向图的每一条有向边代表一条无差错包传输信道，每个 $channel\ use$可以传输1个长为$m$比特的数据包。源节点希望以尽可能高的速率与两个目的节点通信。
+图\ref{BUTTER_EPS}为一个包交换模型。在该网络中，源节点$s$需要将信息多播给两个目的的节点$t$和$u$。有向图的每一条有向边代表一条无差错包传输信道，每个 \emph{channel use}可以传输1个长为$m$比特的数据包。源节点希望以尽可能高的速率与两个目的节点通信。
 \par
 解决该问题，传统的路由方法如图\ref{BUTTER_EPS}$(b)$为例。在第一个时隙内，源节点$s$将$x$发送给$t$和$u$，将$y$发送给$u$。在第二个时隙内，源节点$s$将$y$传给了$t$，将$z$传给了$t$和$u$。两个时隙结束后，两个目的节点$t$和$u$都收到了$x$，$y$，$z$这三个数据包。可以看到，使用传统的路由方法，在两个时隙内可以传输3个不同的报文给$t$和$u$，因此传统路由方法的多播吞吐量为$\dfrac{3}{2} packet/channel\ use$。该多播吞吐量已被证明是使用路由方法能够实现的最大吞吐量。
 \par
@@ -43,52 +43,11 @@
 \par
 节点$v$使用的函数被称为$v$的本地编码函数。当$v$只有路由功能时，它的出边上发送的数据包可以看做是对入边上收到的数据包的复制，即图\ref{TULUNMOXING_EPS}$\left( c \right)$所示的情况。图\ref{TULUNMOXING_EPS}$\left(c\right)$中，网络内部节点$1,2,3$仅仅通过存储转发的方法就达到了多播最大吞吐率，即源节点$s$可以同时发送5个数据包$b_{1}b_{2}b_{3}b_{4}b_{5}$给$t_{1}$和$t_{2}$。当$v$具有对入边数据包进行编码的功能后，如图\ref{BUTTER_EPS}$\left(c\right)$中节点$b$所示，网络多播吞吐率突破了仅仅使用路由方法的吞吐率上限。
 \par
-\par
-网络编码的基本思想是对进入节点的所有数据包进行更一般性的本地编码操作，而不仅仅是简单地复制，从而获得性能上的增益。
-
+对于组合包网络，一次\emph{channel use}指的是为$E$中的每一条非空闲边都分配一个具体的数据包（ 取自集合$A$ ），也可以看做是网路中的节点对特定编码函数的一次实现。换句话说，一次\emph{channel use}中的本地编码函数是固定的，且网络中的每条边最多被使用一次
 \subsection{线性网络编码}\label{xianxingbianma}
-在阐述线性网络编码之前，先简单介绍近世代数的相关概念。
-\begin{myDef}[群]
-	对于一个非空元素集合$G$以及定义在$G$上的一种运算“$*$”（ 这里的$*$泛指一种代数运算，如$+$，$-$，$\times$，$\div$，模$m$加$\oplus$，模$m$乘$\odot$等）。若满足以下四个条件：
-	\begin{enumerate}[fullwidth,itemindent=2em,label=(\arabic*)]
-		\item 封闭性，即$\forall a,b \in G$，$\exists\left(a*b\right)=c\in G$。
-		\item 结合性，即$\forall a,b \in G$，$\exists a*\left(b*c\right)=\left(a*b\right)*c$。
-		\item 存在唯一一个单位元$e$，即$\forall a \in G$，$\exists a*e=e*a=a$。
-		\item $G$中的每个元素各自存在唯一的逆元，即$\forall a \in G$，$\exists {a^{ - 1}} \in G$，使得$a*{a^{-1}}={a^{-1}}*a=e$。这里${a^{-1}}$泛指逆元。
-	\end{enumerate}
-\par
-则称这样的代数系统为群，记做$\left(G,*\right)$。
-\end{myDef}
-\begin{myDef}[交换群]
-	如果一个群满足交换律，即$\forall a,b \in G$，$\exists a*b=b*a$，则称这样的代数系统为交换群，也叫阿贝尔群。
-\end{myDef}
-\par
-如果群$\left(G,*\right)$中的运算$*$是加法，则称群$\left(G,+\right)$为加群。加群一定是交换群。加群中一定包含零元素，零元素正是该加群的单位元$e$，加群元素$a$的逆元$a^{-1}$是代数中的$-a$。
-\begin{myDef}[环]
-	对于非空元素的集合$R$以及定义在$R$上的乘、加两种运算，如满足以下3个条件：
-	\begin{enumerate}[fullwidth,itemindent=2em,label=(\arabic*)]
-		\item 集合$R$在加运算可构成加群$\left(R,+\right)$。
-		\item 集合$R$在乘运算下满足群的前三个条件，即封闭性、结合性和单位元存在性
-		\item 分配率，即$\forall a,b,c \in R$，$\exists a \cdot \left(b+c\right)=a \cdot b + a \cdot c$，$\left(b+c\right) \cdot a=b \cdot a + c \cdot a$。
-	\end{enumerate}
-\par
-则称这样的代数系统为环。
-\end{myDef}
-\begin{myDef}[交换环]
-	如果环满足乘法交换律，即$\forall a,b \in R$，$\exists a \cdot b=b \cdot a$。称该环为交换环。
-\end{myDef}
-\begin{myDef}[域]
-	对于至少含有一个非零元素的交换环，若每个非零元素都存在乘运算下的逆元，则称该交换环为域，记做$\left(F,+,\cdot \right)$。
-\end{myDef}
-\par
-有限整数的集合$F=\left(0,1,2,\dots ,q-1\right)$（ $q$是素数）在模$q$加、模$q$乘运算下构成一个$q$阶\textbf{有限域}，记做$GF\left(q\right)$。
-\par
-有限域提供了一个有限集，在该有限集上明确地定义且有效地实现了加法、减法、乘法及除法运算（ 减法可以转换为加法，除法可以转换为乘法），并允许系统使用矩阵、行列式、高斯消元等线性代数中常见的运算工具来解决该域上的联立线性方程组问题。
-\par
 我们用列向量$\left(p_{1},p_{2},\dots,p_{r}\right)^{T}$表示进入源节点$s$的数据包${{\rm X}_{{\rm I}\left( s \right)}}$。每个数据包$p_{i}$都是$\mathbb{F}_{q}$上的标量。对于更一般的多个数据包的情况，$p_{i}$可以看做是$\mathbb{F}_{q}$上长度为$m$的矢量。这样，我们可以用一个定义在$\mathbb{F}_{q}$上的$r \times m$矩阵来表示${\rm X}_{{\rm I}\left( s \right)}$，该矩阵的第$i$行是$p_{i}$。
 \par
 本地编码函数是$\mathbb{F}_{q}$上的线性函数，即任意中间节点$v$输出的数据包列向量${\rm X}_{{\rm O}\left( v \right)}$与其接收到的数据包列向量${\rm X}_{{\rm I}\left( v \right)}$之间的关系可以用以下线性方程组表示：
-
 \begin{equation}\label{eq21}
 {\rm X}_{{\rm O}\left( v \right)}={\rm L}_{v}{\rm X}_{{\rm I}_{\left( v \right)}}
 \end{equation}
@@ -119,7 +78,7 @@
 对于目的节点$t$来说，当且仅当$\left|{\rm I}\left(t\right)\right| \times r$阶全局转移矩阵$G_{t}$的秩为$r$时，$t$才能恢复出$\left(p_1,p_2,\dots,p_r\right)$中的所有元素。因为只有$G_t$满秩时，才存在满足${G_t}^{-1}G_t={\rm I}_r$的左逆矩阵，其中${\rm I}_r$是$r \times r$阶单位矩阵。只需$G_{t}$满秩，而不要求$G_{t}$是可求逆的方阵。目的节点$t$可以通过计算${G_t}^{-1}{\rm X}_{{\rm I}\left(t\right)}$得到$\left(p_1,p_2,\dots,p_r\right)^{T}$。
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=6in]{figures/zhuanyi.pdf}
+	\includegraphics[width=4in]{figures/zhuanyi.pdf}
 	\caption{标注了本地转移矩阵的蝶形网络}
 	\label{ZHUANYI_EPS}
 \end{figure}
@@ -242,8 +201,17 @@ c = \sum\limits_{j = 1}^m {{e_j}{p_{i \times k + j}}}
 \par
 图\ref{LIUSHUIXIAN_EPS}展示了一个流水线编码的例子。这里\emph{generation}的大小为4，冗余度为1.25。当有一个原始数据包产生时，立马就编码得到一个编码包。同样地，在解码端，每当有一个“innovative”报文到来的时候，就可以立马解出一个原始报文。
 \par
-对于丢包的情况，图\ref{LIUSHUIXIAN_EPS}中\emph{Gen \# 2}中的$C8$丢失，目的节点在收到$C9$后，无法解出$DATA7$。这时候需要将undecoded packets存起来，等到冗余报文过来才可以解出原始报文，如图\ref{LIUSHUIXIAN_EPS}中的$C10$。Batch Coding的编解码流程如Algorithm\ref{algo1}和Algorithm\ref{algo2}：
-\begin{algorithm}  
+对于丢包的情况，图\ref{LIUSHUIXIAN_EPS}中\emph{Gen \# 2}中的$C8$丢失，目的节点在收到$C9$后，无法解出$DATA7$。这时候需要将undecoded packets存起来，等到冗余报文过来才可以解出原始报文，如图\ref{LIUSHUIXIAN_EPS}中的$C10$。Batch Coding的编解码流程如Algorithm\ref{algo1}和Algorithm\ref{algo2}。
+\par
+采用流水线编码的优点主要有：
+\begin{enumerate}[fullwidth,itemindent=2em,label=(\arabic*)]
+	\item 更低的解码时延
+	\item 更高的吞吐率
+	\item 对上层来说是透明的（ UDP，TCP，或者其他协议 ）
+\end{enumerate}
+\par
+本文所实现的TCP/NC协议也是基于流水线网络编码。
+\begin{algorithm}[htbp]  
 	\caption{Encoding Function}  
 	\label{algo1}
 	\KwIn{coding redundancy $r$，data packet \emph{data} from up-layer，$generation\_buffer\left[0,\dots,m,\dots \right]$，number of packets currently in \emph{generation buffer} $m-1$}  
@@ -268,20 +236,21 @@ c = \sum\limits_{j = 1}^m {{e_j}{p_{i \times k + j}}}
 	$i \leftarrow i+1$\;
 }
 \end{algorithm}
-
-\begin{algorithm}  
+\begin{algorithm}[htbp]  
 	\caption{Decoding Function}
+	\KwIn{data packet \emph{data}，$generation\_buffer\left[0,\dots,m,\dots \right]$}
+	\KwOut{NONE}
 	\label{algo2}  
-	\If{(not innovative(\emph{data}))}
+	\If{(\emph{not\_innovative}(data))}
 	{
-		Message\_Free(\emph{data})\;
+		Free\_data(\emph{data})\;
 		\Return;
 	}
 	Store \emph{data} to \emph{generation buffer}\;
 	Gaussian\_Elimination(\emph{generation})\;
 	\If{(decodable packets cause no reordering)}
 	{
-		Deliver to Transport(newly decodec data packets)\;
+		Deliver it to Transport Layer;
 	}
 \end{algorithm}
 

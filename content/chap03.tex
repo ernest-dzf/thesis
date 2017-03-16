@@ -4,7 +4,33 @@
 \chapter{TCP/NC协议实现}
 本章主要讲TCP/NC的具体实现，在无线lossy信道下测试TCP/NC的性能，并与标准的TCP-vegas进行分析对比。
 \section{数据包编码}
-由于从TCP层下来的数据包都是字节流，如何从这些字节流中提取出我们在第\ref{xianxingbianma}小节中谈到的报文概念呢？进一步地，我们如何对这些报文进行各种操作，如加减乘除呢？
+在阐述数据包编码之前，先简单介绍近世代数的相关概念。
+\begin{myDef}[阿贝尔群]
+	对于一个非空元素集合$G$以及定义在$G$上的一种运算“$*$”（ 这里的$*$泛指一种代数运算，如$+$，$-$，$\times$，$\div$，模$m$加$\oplus$，模$m$乘$\odot$等）。若满足以下四个条件：
+	\begin{enumerate}[fullwidth,itemindent=2em,label=(\arabic*)]
+		\item 封闭性，即$\forall a,b \in G$，$\exists\left(a*b\right)=c\in G$。
+		\item 结合性，即$\forall a,b \in G$，$\exists a*\left(b*c\right)=\left(a*b\right)*c$。
+		\item 存在唯一一个单位元$e$，即$\forall a \in G$，$\exists a*e=e*a=a$。
+		\item $G$中的每个元素各自存在唯一的逆元，即$\forall a \in G$，$\exists {a^{ - 1}} \in G$，使得$a*{a^{-1}}={a^{-1}}*a=e$。这里${a^{-1}}$泛指逆元。
+		\item $\forall a,b \in G$，$\exists a*b=b*a$
+	\end{enumerate}
+	\par
+	则称这样的代数系统为阿贝尔群，记做$\left(G,*\right)$。
+\end{myDef}
+\begin{myDef}[有限域]
+	非空集合$F$含有有限个元素，其中定义了加和乘两种运算，且满足
+	\begin{enumerate}[fullwidth,itemindent=2em,label=(\arabic*)]
+		\item $F$关于加法构成阿贝尔群，加法恒等元记为0
+		\item $F$中所有非零元素对乘法构成阿贝尔群，乘法恒等元记为1
+		\item $F$加法和乘法满足分配律
+	\end{enumerate}
+	\par
+	则$F$与这两种运算构成有限域。
+\end{myDef}
+\par
+有限域提供了一个有限集，在该有限集上明确地定义且有效地实现了加法、减法、乘法及除法运算（ 减法可以转换为加法，除法可以转换为乘法），并允许系统使用矩阵、行列式、高斯消元等线性代数中常见的运算工具来解决该域上的联立线性方程组问题。
+\par
+由于从TCP层下来的数据包都是字节流，如何抽象出我们在第\ref{xianxingbianma}小节中谈到的报文概念呢？进一步地，我们如何对这些报文进行各种操作，如加减乘除呢？
 \par
 将数据包分解成字节，先对字节进行加减乘除的操作，拼接得到的结果是可行的。这解决了以何种角度刻画数据包的问题。对于数据包的运算，如果是在实数域上进行各种代数运算，则会涉及到进位的问题，不好处理。例如，$p_{1}$和$p_{2}$这两个数据包的二进制形式为$p_{1}=\left(1010\ 1010\right)$和$p_{2}=\left(1111\ 0000\right)$。在实数域上计算得到$p_{3}=p_{1}+p_{2}$，则$p_{3}=\left(1\ 1001\ 1010\right)$，$p_{1}$和$p_{2}$都是8个比特，但是$p_{3}$却是$9$比特，出现了进位，导致我们的处理很麻烦。
 \par
